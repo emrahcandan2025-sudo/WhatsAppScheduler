@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">WhatsApp Zamanlayıcı</string>
+    <string name="accessibility_service_description">Zamanlanmış mesaj geldiğinde WhatsApp\'ta gönder butonuna otomatik basar. Sadece bu uygulamanın kendi zamanladığı mesajlar için çalışır.</string>
+</resources>
