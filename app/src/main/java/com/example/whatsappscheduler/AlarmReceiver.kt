@@ -3,13 +3,12 @@ package com.example.whatsappscheduler
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
-import java.net.URLEncoder
 
 /**
- * Zamanlanan saat geldiğinde tetiklenir. WhatsApp'ı, numarası ve mesajı
- * hazır dolu şekilde açar. Gerçek "gönder" tıklamasını WhatsAppAutoSendService
- * (Erişilebilirlik servisi) yapar; bu receiver sadece ekranı hazırlar.
+ * Zamanlanan saat geldiğinde tetiklenir. Ekranı uyandırıp WhatsApp'ı
+ * mesaj hazır şekilde açan WakeUpActivity'yi başlatır. Gerçek "gönder"
+ * tıklamasını WhatsAppAutoSendService (Erişilebilirlik servisi) yapar;
+ * bu receiver sadece süreci başlatır.
  */
 class AlarmReceiver : BroadcastReceiver() {
 
@@ -24,23 +23,15 @@ class AlarmReceiver : BroadcastReceiver() {
         // Erişilebilirlik servisine "bu mesaj için gönderim bekleniyor" bilgisini bırak.
         storage.setPendingSendId(id)
 
-        val encodedText = URLEncoder.encode(message.message, "UTF-8")
-        val uri = Uri.parse("https://wa.me/${message.phoneNumber}?text=$encodedText")
-
-        val whatsappIntent = Intent(Intent.ACTION_VIEW, uri).apply {
-            setPackage("com.whatsapp")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val wakeUpIntent = Intent(context, WakeUpActivity::class.java).apply {
+            putExtra("phone", message.phoneNumber)
+            putExtra("message", message.message)
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_NO_HISTORY or
+                    Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+            )
         }
-
-        try {
-            context.startActivity(whatsappIntent)
-        } catch (e: Exception) {
-            // WhatsApp yüklü değilse veya paket adı farklıysa (ör. WhatsApp Business),
-            // paket kısıtlaması olmadan tekrar dene.
-            val fallbackIntent = Intent(Intent.ACTION_VIEW, uri).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            context.startActivity(fallbackIntent)
-        }
+        context.startActivity(wakeUpIntent)
     }
 }

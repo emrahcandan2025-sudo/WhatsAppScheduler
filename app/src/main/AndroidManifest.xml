@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Android 13+ bildirim izni (opsiyonel bilgilendirme için) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Ekran kapalıyken alarmda ekranı uyandırabilmek için -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
 
     <application
         android:allowBackup="true"
@@ -24,6 +27,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Ekran kapalıyken uyandırıp WhatsApp'ı açan saydam aktivite -->
+        <activity
+            android:name=".WakeUpActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:theme="@style/Theme.Transparent" />
 
         <!-- Alarm tetiklendiğinde çalışan alıcı -->
         <receiver
