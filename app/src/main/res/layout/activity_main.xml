@@ -26,6 +26,13 @@
             android:inputType="phone" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <Button
+        android:id="@+id/btnPickContact"
+        style="?attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Rehberden Seç" />
+
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -68,6 +75,38 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:text="Seçilen zaman: -" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="4dp"
+        android:gravity="center_vertical">
+
+        <Button
+            android:id="@+id/btnPickImage"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Görsel Ekle" />
+
+        <ImageView
+            android:id="@+id/imagePreview"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:visibility="gone"
+            android:scaleType="centerCrop"
+            android:contentDescription="Seçilen görsel önizlemesi" />
+
+        <Button
+            android:id="@+id/btnRemoveImage"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Kaldır"
+            android:visibility="gone" />
+    </LinearLayout>
 
     <Button
         android:id="@+id/btnSchedule"

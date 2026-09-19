@@ -9,8 +9,12 @@
     <!-- Android 13+ bildirim izni (opsiyonel bilgilendirme için) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Ekran kapalıyken alarmda ekranı uyandırabilmek için -->
+    <!-- Rehberden numara/isim okumak için -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <application
         android:allowBackup="true"
@@ -28,13 +32,26 @@
             </intent-filter>
         </activity>
 
-        <!-- Ekran kapalıyken uyandırıp WhatsApp'ı açan saydam aktivite -->
-        <activity
-            android:name=".WakeUpActivity"
+        <!-- Görselleri WhatsApp'a paylaşabilmek için FileProvider -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
             android:exported="false"
-            android:excludeFromRecents="true"
-            android:launchMode="singleInstance"
-            android:theme="@style/Theme.Transparent" />
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
+        <!-- Kilit ekranı açılınca bekleyen mesajı gönderen servis -->
+        <service
+            android:name=".UnlockWaiterService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Zamanlanmis WhatsApp mesaji icin kilit acilmasini bekleme" />
+        </service>
 
         <!-- Alarm tetiklendiğinde çalışan alıcı -->
         <receiver

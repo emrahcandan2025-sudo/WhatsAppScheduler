@@ -1,14 +1,20 @@
 package com.example.whatsappscheduler
 
+import android.app.KeyguardManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.os.PowerManager
 
 /**
- * Zamanlanan saat geldiğinde tetiklenir. Ekranı uyandırıp WhatsApp'ı
- * mesaj hazır şekilde açan WakeUpActivity'yi başlatır. Gerçek "gönder"
- * tıklamasını WhatsAppAutoSendService (Erişilebilirlik servisi) yapar;
- * bu receiver sadece süreci başlatır.
+ * Zamanlanan saat geldiğinde tetiklenir.
+ *  - Önce ekranı uyandırır (aksi halde WhatsApp arka planda render edilmediği
+ *    için Erişilebilirlik servisi gönder butonunu bulamaz).
+ *  - Telefon kilitli DEĞİLSE: doğrudan WhatsAppSender ile gönderimi başlatır.
+ *  - Telefon güvenli bir kilitle (PIN/desen/parmak izi) KİLİTLİYSE:
+ *    UnlockWaiterService'i başlatır; bu servis kullanıcı kilidi AÇTIĞI anda
+ *    mesajı gönderir. (Android güvenlik gereği kilidi otomatik açamayız.)
  */
 class AlarmReceiver : BroadcastReceiver() {
 
@@ -20,18 +26,40 @@ class AlarmReceiver : BroadcastReceiver() {
         val message = storage.getById(id) ?: return
         if (message.sent) return
 
-        // Erişilebilirlik servisine "bu mesaj için gönderim bekleniyor" bilgisini bırak.
-        storage.setPendingSendId(id)
+        wakeScreen(context)
 
-        val wakeUpIntent = Intent(context, WakeUpActivity::class.java).apply {
-            putExtra("phone", message.phoneNumber)
-            putExtra("message", message.message)
-            addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_NO_HISTORY or
-                    Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
-            )
+        val keyguardManager = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        val isLocked = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            keyguardManager.isDeviceLocked
+        } else {
+            keyguardManager.isKeyguardLocked
         }
-        context.startActivity(wakeUpIntent)
+
+        if (isLocked) {
+            val serviceIntent = Intent(context, UnlockWaiterService::class.java).apply {
+                putExtra("messageId", id)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(serviceIntent)
+            } else {
+                context.startService(serviceIntent)
+            }
+            storage.markSent(id) // tekrar tetiklenmesin; asıl gönderim servis tarafından yapılacak
+            return
+        }
+
+        WhatsAppSender.send(context, storage, message)
+    }
+
+    private fun wakeScreen(context: Context) {
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        @Suppress("DEPRECATION")
+        val wakeLock = powerManager.newWakeLock(
+            PowerManager.SCREEN_BRIGHT_WAKE_LOCK or
+                PowerManager.ACQUIRE_CAUSES_WAKEUP or
+                PowerManager.ON_AFTER_RELEASE,
+            "WhatsAppScheduler:alarmWake"
+        )
+        wakeLock.acquire(15_000L)
     }
 }

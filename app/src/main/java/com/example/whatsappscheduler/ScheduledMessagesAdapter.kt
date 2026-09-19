@@ -29,8 +29,8 @@ class ScheduledMessagesAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val item = items[position]
-        holder.phone.text = item.phoneNumber
-        holder.message.text = item.message
+        holder.phone.text = item.contactName ?: item.phoneNumber
+        holder.message.text = if (item.imageFileName != null) "📷 ${item.message}".trim() else item.message
         val status = if (item.sent) "Gönderildi" else "Bekliyor"
         holder.time.text = "${dateFormat.format(Date(item.timestampMillis))} • $status"
         holder.deleteButton.setOnClickListener { onDelete(item) }

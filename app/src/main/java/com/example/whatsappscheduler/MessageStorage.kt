@@ -16,6 +16,9 @@ class MessageStorage(context: Context) {
     companion object {
         private const val KEY_MESSAGES = "scheduled_messages"
         private const val KEY_PENDING_SEND_ID = "pending_send_id"
+        private const val KEY_PENDING_IMAGE_STEP = "pending_image_step"
+        private const val KEY_PENDING_IMAGE_TARGET = "pending_image_target"
+        private const val KEY_PENDING_IMAGE_MESSAGE_ID = "pending_image_message_id"
     }
 
     fun getAll(): MutableList<ScheduledMessage> {
@@ -28,7 +31,9 @@ class MessageStorage(context: Context) {
                 ScheduledMessage(
                     id = obj.getLong("id"),
                     phoneNumber = obj.getString("phoneNumber"),
+                    contactName = if (obj.has("contactName") && !obj.isNull("contactName")) obj.getString("contactName") else null,
                     message = obj.getString("message"),
+                    imageFileName = if (obj.has("imageFileName") && !obj.isNull("imageFileName")) obj.getString("imageFileName") else null,
                     timestampMillis = obj.getLong("timestampMillis"),
                     sent = obj.optBoolean("sent", false)
                 )
@@ -43,7 +48,9 @@ class MessageStorage(context: Context) {
             val obj = JSONObject()
             obj.put("id", m.id)
             obj.put("phoneNumber", m.phoneNumber)
+            obj.put("contactName", m.contactName)
             obj.put("message", m.message)
+            obj.put("imageFileName", m.imageFileName)
             obj.put("timestampMillis", m.timestampMillis)
             obj.put("sent", m.sent)
             array.put(obj)
@@ -74,10 +81,8 @@ class MessageStorage(context: Context) {
     fun getPendingFuture(): List<ScheduledMessage> =
         getAll().filter { !it.sent && it.timestampMillis > System.currentTimeMillis() }
 
-    /**
-     * Erişilebilirlik servisine "şu anda bu id için gönderim bekleniyor" bilgisini iletir.
-     * -1L bekleyen gönderim olmadığı anlamına gelir.
-     */
+    // --- Düz metin gönderimi için bekleme durumu (mevcut) ---
+
     fun setPendingSendId(id: Long) {
         prefs.edit().putLong(KEY_PENDING_SEND_ID, id).apply()
     }
@@ -86,5 +91,35 @@ class MessageStorage(context: Context) {
 
     fun clearPendingSendId() {
         prefs.edit().putLong(KEY_PENDING_SEND_ID, -1L).apply()
+    }
+
+    // --- Görsel gönderimi için çok adımlı bekleme durumu ---
+    // step 0 = beklenen yok, 1 = "kime iletilsin" ekranında kişi seçimi bekleniyor,
+    // 2 = kişi seçildi, gönder/onayla butonunun tıklanması bekleniyor
+
+    fun setPendingImageJob(messageId: Long, target: String) {
+        prefs.edit()
+            .putInt(KEY_PENDING_IMAGE_STEP, 1)
+            .putString(KEY_PENDING_IMAGE_TARGET, target)
+            .putLong(KEY_PENDING_IMAGE_MESSAGE_ID, messageId)
+            .apply()
+    }
+
+    fun getPendingImageStep(): Int = prefs.getInt(KEY_PENDING_IMAGE_STEP, 0)
+
+    fun getPendingImageTarget(): String? = prefs.getString(KEY_PENDING_IMAGE_TARGET, null)
+
+    fun getPendingImageMessageId(): Long = prefs.getLong(KEY_PENDING_IMAGE_MESSAGE_ID, -1L)
+
+    fun advancePendingImageStep() {
+        prefs.edit().putInt(KEY_PENDING_IMAGE_STEP, 2).apply()
+    }
+
+    fun clearPendingImageJob() {
+        prefs.edit()
+            .putInt(KEY_PENDING_IMAGE_STEP, 0)
+            .remove(KEY_PENDING_IMAGE_TARGET)
+            .remove(KEY_PENDING_IMAGE_MESSAGE_ID)
+            .apply()
     }
 }
