@@ -6,8 +6,10 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <!-- Telefon yeniden başladığında bekleyen alarmları tekrar kurmak için -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- Android 13+ bildirim izni (opsiyonel bilgilendirme için) -->
+    <!-- Android 13+ bildirim izni (full-screen intent bildirimi için artık zorunlu) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Ekran kapalı/kilitliyken WhatsAppLaunchActivity'yi öne getirebilmek için -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <!-- Ekran kapalıyken alarmda ekranı uyandırabilmek için -->
     <!-- Rehberden numara/isim okumak için -->
     <uses-permission android:name="android.permission.READ_CONTACTS" />
@@ -31,6 +33,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Görünmez köprü Activity: full-screen intent bildirimiyle ekran kapalı/
+             kilitli olsa bile öne gelir, foreground'dan WhatsApp'ı güvenle tetikler -->
+        <activity
+            android:name=".WhatsAppLaunchActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <!-- Görselleri WhatsApp'a paylaşabilmek için FileProvider -->
         <provider
