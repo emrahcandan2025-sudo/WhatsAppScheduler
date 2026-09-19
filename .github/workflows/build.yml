@@ -1,0 +1,38 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kodu çek
+        uses: actions/checkout@v4
+
+      - name: JDK 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Gradle wrapper'a çalıştırma izni ver
+        run: |
+          if [ ! -f gradlew ]; then
+            echo "gradlew bulunamadı, oluşturuluyor..."
+          fi
+
+      - name: Gradle ile APK derle
+        run: |
+          gradle wrapper --gradle-version 8.7 || true
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: APK'yı yükle (Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: WhatsAppScheduler-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
