@@ -25,16 +25,29 @@ jobs:
       - name: Gradle wrapper oluştur
         run: gradle wrapper --gradle-version 8.7
 
-      - name: Gradle ile APK derle
+      - name: Keystore dosyasını geri oluştur
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/cndnwp-release.keystore
+
+      - name: Gradle ile imzalı Release APK derle
+        env:
+          KEYSTORE_FILE: cndnwp-release.keystore
+          KEYSTORE_STORE_PASSWORD: ${{ secrets.KEYSTORE_STORE_PASSWORD }}
+          KEYSTORE_KEY_ALIAS: ${{ secrets.KEYSTORE_KEY_ALIAS }}
+          KEYSTORE_KEY_PASSWORD: ${{ secrets.KEYSTORE_KEY_PASSWORD }}
         run: |
           chmod +x ./gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Keystore dosyasını sil (güvenlik)
+        if: always()
+        run: rm -f app/cndnwp-release.keystore
 
       - name: APK'yı GitHub Release olarak yayınla
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: "APK build #${{ github.run_number }}"
-          files: app/build/outputs/apk/debug/app-debug.apk
+          name: "CNDN WP build #${{ github.run_number }}"
+          files: app/build/outputs/apk/release/app-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
