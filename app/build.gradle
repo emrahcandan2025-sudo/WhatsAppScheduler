@@ -15,10 +15,39 @@ android {
         versionName "1.0"
     }
 
+    // İmzalama bilgileri hiçbir zaman doğrudan koda yazılmaz; ya ortam
+    // değişkenlerinden (GitHub Actions secrets) ya da yerelde
+    // keystore.properties dosyasından (bu dosya .gitignore'da, repo'ya
+    // asla yüklenmez) okunur.
+    def keystorePropsFile = rootProject.file("keystore.properties")
+    def keystoreProps = new Properties()
+    if (keystorePropsFile.exists()) {
+        keystoreProps.load(new FileInputStream(keystorePropsFile))
+    }
+
+    def storeFilePath = keystoreProps.getProperty("storeFile") ?: System.getenv("KEYSTORE_FILE")
+    def storePasswordValue = keystoreProps.getProperty("storePassword") ?: System.getenv("KEYSTORE_STORE_PASSWORD")
+    def keyAliasValue = keystoreProps.getProperty("keyAlias") ?: System.getenv("KEYSTORE_KEY_ALIAS")
+    def keyPasswordValue = keystoreProps.getProperty("keyPassword") ?: System.getenv("KEYSTORE_KEY_PASSWORD")
+
+    signingConfigs {
+        release {
+            if (storeFilePath != null) {
+                storeFile file(storeFilePath)
+                storePassword storePasswordValue
+                keyAlias keyAliasValue
+                keyPassword keyPasswordValue
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (storeFilePath != null) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 
